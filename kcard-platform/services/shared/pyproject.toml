@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kcard-shared"
+version = "0.1.0"
+description = "Shared utilities for K-Card services"
+requires-python = ">=3.11"
+dependencies = [
+  "pydantic>=2.10.3",
+  "pydantic-settings>=2.7.0",
+  "python-jose[cryptography]>=3.3.0",
+  "passlib[bcrypt]>=1.7.4",
+  "sqlalchemy>=2.0.36",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["shared*"]

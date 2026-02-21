@@ -1,0 +1,49 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-kcard}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kcard}
+      POSTGRES_DB: ${POSTGRES_DB:-kcard}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-kcard}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  auth-service:
+    build:
+      context: ../services/auth-service
+      dockerfile: Dockerfile
+    env_file:
+      - ../.env.example
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-kcard}:${POSTGRES_PASSWORD:-kcard}@postgres:5432/${POSTGRES_DB:-kcard}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8001:8001"
+
+  api-gateway:
+    build:
+      context: ../gateway/api-gateway
+      dockerfile: Dockerfile
+    env_file:
+      - ../.env.example
+    depends_on:
+      - auth-service
+    ports:
+      - "8000:8000"
+
+volumes:
+  postgres_data:
