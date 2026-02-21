@@ -1,24 +1,34 @@
-# K-Card Runbook
+# Runbook
 
-## Start platform services
+## Local startup
 ```bash
 cd kcard-platform
 cp .env.example .env
 docker compose -f infra/compose.yml up --build
 ```
 
-## Run auth service locally
+Gateway: `http://localhost:8000`
+
+## Demo identities
+- `admin@kcard.local` / `Admin123!`
+- `user@kcard.local` / `User123!`
+- `merchant@kcard.local` / `Merchant123!`
+
+## Web admin
 ```bash
-cd kcard-platform/services/auth-service
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-alembic upgrade head
-python -m app.seed
-uvicorn app.main:app --reload --port 8001
+cd apps/web-admin
+npm install
+npm run dev
 ```
 
-## Seed credentials
-- Admin: `admin@kcard.local` / `Admin123!`
-- User: `user@kcard.local` / `User123!`
-- Merchant user: `merchant@kcard.local` / `Merchant123!`
+## Mobile app (Expo)
+```bash
+cd apps/mobile-app
+npm install
+npm start
+```
+
+## Troubleshooting
+- If auth fails due to missing tables, restart stack so auth-service initializes first.
+- If you see 401 from domain services, ensure the token is an access token from `/auth/login`.
+- If gateway returns 404, ensure the first path segment maps to a configured service domain.

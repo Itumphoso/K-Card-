@@ -1,21 +1,32 @@
 # K-Card Architecture
 
-## System map (MVP bootstrap)
-- **API Gateway** routes versioned `/api/v1/*` traffic to backend services.
-- **Auth Service** manages identities, passwords, JWT access/refresh tokens, and RBAC claims.
-- **PostgreSQL** is the source of truth for transactional data.
-- **Redis** is available for caching/session revocation queues.
+K-Card is organized as a microservice-style MVP on a shared PostgreSQL database.
 
-## Initial implementation status
-This bootstrap includes:
-1. Monorepo structure for all required services and apps.
-2. Docker Compose runtime with PostgreSQL, Redis, gateway placeholder, and auth service.
-3. Shared Python package for configuration, DB session management, JWT helpers, and common schemas.
-4. Auth service with Alembic migration and seed data (admin/user/merchant personas + roles).
+## Runtime services
+- `auth-service` (JWT auth, user/role bootstrap)
+- `wallet-service` (wallet balances, append-only ledger, QR generation, payments)
+- `payments-service` (mock provider confirmations + payment intent status)
+- `transport-service` (merchant + vehicle onboarding, rides, cab location updates)
+- `payout-service` (merchant withdrawal flow with admin approval)
+- `credit-service` (controlled credit eligibility, draw, repay)
+- `api-gateway` (single `/api/v1` entrypoint proxying to all services)
+- `postgres`
 
-## Auth flow
-1. User registers with email/password.
-2. Password is hashed with `bcrypt`.
-3. Login validates credentials and issues access + refresh JWTs.
-4. `/api/v1/auth/me` reads and validates bearer token and returns profile + roles.
-5. Refresh endpoint rotates access token and emits a new refresh token.
+## Core data model
+- Users/Roles + `user_roles`
+- Merchant domain (`merchants`, `merchant_users`, `vehicles`, `cab_locations`, `rides`)
+- Wallet domain (`wallets`, `ledger_entries`, `payment_intents`, `payouts`)
+- Credit domain (`credit_lines`, `credit_events`)
+- Global `audit_logs`
+
+## Business rules enforced
+1. Users can top up and pay; there is no user cash-out endpoint.
+2. Merchant payout endpoint only allows `MERCHANT` role and destinations `mpesa/ecocash/bank`.
+3. Ride lifecycle supports request -> assign -> status changes with latest location lookup.
+4. Credit draws and repayments are audited and mirrored in wallet ledger entries.
+
+## Security and controls
+- JWT access/refresh token flow from auth-service.
+- Shared RBAC dependency for service endpoints (`USER`, `MERCHANT`, `ADMIN`).
+- Append-only ledger table: new entries are inserted, never edited.
+- Audit logs inserted for payout/credit/top-up operations.
