@@ -1,29 +1,43 @@
-# K-Card API (Current Milestone)
+# API Surface (`/api/v1`)
 
-Base path: `/api/v1`
-
-## Auth Service
+## Auth
 - `POST /auth/register`
 - `POST /auth/login`
 - `POST /auth/refresh`
 - `POST /auth/logout`
 - `GET /auth/me`
-- `GET /health`
 
-### Sample register payload
-```json
-{
-  "full_name": "Test User",
-  "email": "user@example.com",
-  "phone": "+263700000000",
-  "password": "Secret123!"
-}
-```
+## Wallet
+- `GET /wallets/me`
+- `GET /wallets/{wallet_id}/ledger`
+- `POST /wallets/topup-intent`
+- `POST /wallets/pay`
+- `POST /wallets/qr/generate`
 
-### Sample login payload
-```json
-{
-  "email": "admin@kcard.local",
-  "password": "Admin123!"
-}
-```
+## Payments
+- `POST /payments/confirm`
+- `GET /payments/{intent_id}`
+
+## Transport
+- `POST /merchants/register`
+- `POST /vehicles/register`
+- `POST /cabs/{vehicle_id}/location`
+- `POST /rides/request`
+- `POST /rides/{ride_id}/assign`
+- `POST /rides/{ride_id}/status`
+- `GET /rides/{ride_id}`
+
+## Payouts
+- `POST /payouts/request`
+- `GET /payouts`
+- `POST /payouts/{payout_id}/approve`
+- `POST /payouts/{payout_id}/mark-paid`
+
+## Credit
+- `POST /credit/eligibility-check`
+- `POST /credit/request`
+- `POST /credit/{credit_line_id}/draw`
+- `POST /credit/{credit_line_id}/repay`
+- `GET /credit/me`
+
+All services also expose `GET /api/v1/health`.

@@ -5,45 +5,71 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-kcard}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kcard}
       POSTGRES_DB: ${POSTGRES_DB:-kcard}
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+    ports: ["5432:5432"]
+    volumes: ["postgres_data:/var/lib/postgresql/data"]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-kcard}"]
       interval: 5s
       timeout: 5s
-      retries: 5
-
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
+      retries: 10
 
   auth-service:
-    build:
-      context: ../services/auth-service
-      dockerfile: Dockerfile
-    env_file:
-      - ../.env.example
+    build: { context: ../services/auth-service, dockerfile: Dockerfile }
+    env_file: [../.env.example]
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-kcard}:${POSTGRES_PASSWORD:-kcard}@postgres:5432/${POSTGRES_DB:-kcard}
-    depends_on:
-      postgres:
-        condition: service_healthy
-    ports:
-      - "8001:8001"
+    depends_on: { postgres: { condition: service_healthy } }
+    ports: ["8001:8001"]
+
+  wallet-service:
+    build: { context: ../services/wallet-service, dockerfile: Dockerfile }
+    env_file: [../.env.example]
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-kcard}:${POSTGRES_PASSWORD:-kcard}@postgres:5432/${POSTGRES_DB:-kcard}
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8002
+    depends_on: [auth-service]
+    ports: ["8002:8002"]
+
+  payments-service:
+    build: { context: ../services/payments-service, dockerfile: Dockerfile }
+    env_file: [../.env.example]
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-kcard}:${POSTGRES_PASSWORD:-kcard}@postgres:5432/${POSTGRES_DB:-kcard}
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8003
+    depends_on: [auth-service]
+    ports: ["8003:8003"]
+
+  transport-service:
+    build: { context: ../services/transport-service, dockerfile: Dockerfile }
+    env_file: [../.env.example]
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-kcard}:${POSTGRES_PASSWORD:-kcard}@postgres:5432/${POSTGRES_DB:-kcard}
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8004
+    depends_on: [auth-service]
+    ports: ["8004:8004"]
+
+  payout-service:
+    build: { context: ../services/payout-service, dockerfile: Dockerfile }
+    env_file: [../.env.example]
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-kcard}:${POSTGRES_PASSWORD:-kcard}@postgres:5432/${POSTGRES_DB:-kcard}
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8005
+    depends_on: [auth-service]
+    ports: ["8005:8005"]
+
+  credit-service:
+    build: { context: ../services/credit-service, dockerfile: Dockerfile }
+    env_file: [../.env.example]
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-kcard}:${POSTGRES_PASSWORD:-kcard}@postgres:5432/${POSTGRES_DB:-kcard}
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8006
+    depends_on: [auth-service]
+    ports: ["8006:8006"]
 
   api-gateway:
-    build:
-      context: ../gateway/api-gateway
-      dockerfile: Dockerfile
-    env_file:
-      - ../.env.example
-    depends_on:
-      - auth-service
-    ports:
-      - "8000:8000"
+    build: { context: ../gateway/api-gateway, dockerfile: Dockerfile }
+    depends_on: [auth-service, wallet-service, payments-service, transport-service, payout-service, credit-service]
+    ports: ["8000:8000"]
 
 volumes:
   postgres_data:

@@ -1,0 +1,5 @@
+:root { font-family: Inter, system-ui; }
+body { margin: 0; background: #0B1B3A; color: #fff; }
+.page { padding: 32px; }
+.grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; }
+.card { border-radius: 16px; background: linear-gradient(145deg,#142b58,#1a3d75); padding: 24px; box-shadow: 0 8px 25px rgba(0,0,0,0.2); }
